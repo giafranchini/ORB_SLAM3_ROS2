@@ -8,6 +8,13 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/image.hpp"
+#include <nav_msgs/msg/odometry.hpp>
+
+#include <tf2/LinearMath/Transform.h>
+#include "tf2/exceptions.h"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/buffer.h"
 
 #include "message_filters/subscriber.h"
 #include "message_filters/synchronizer.h"
@@ -44,6 +51,17 @@ private:
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image> > depth_sub;
 
     std::shared_ptr<message_filters::Synchronizer<approximate_sync_policy> > syncApproximate;
+
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher;
+
+    std::shared_ptr<tf2_ros::TransformListener> tf_listener{nullptr};
+    std::unique_ptr<tf2_ros::Buffer> tf_buffer;
+    std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
+
+    Eigen::Isometry3f prev_odom, cam_to_bl;
+
+    bool publish_tf;
+    bool first_time = true;
 };
 
 #endif

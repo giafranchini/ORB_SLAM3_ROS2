@@ -3,7 +3,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/image.hpp"
-#include<nav_msgs/msg/odometry.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 
 #include <tf2/LinearMath/Transform.h>
 #include "tf2/exceptions.h"
@@ -43,13 +43,14 @@ private:
     rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr m_image_subscriber;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr m_odom_publisher;
 
-    std::shared_ptr<tf2_ros::TransformListener> tf_listener{nullptr};
-    std::unique_ptr<tf2_ros::Buffer> tf_buffer;
-    std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
+    std::shared_ptr<tf2_ros::TransformListener> m_tf_listener{nullptr};
+    std::unique_ptr<tf2_ros::Buffer> m_tf_buffer;
+    std::unique_ptr<tf2_ros::TransformBroadcaster> m_tf_broadcaster;
 
-    Eigen::Isometry3f prev_odom, cam_to_bl;
+    Eigen::Isometry3f m_prev_odom, m_cam_to_bl;
 
-    bool first_time = true;
+    bool m_publish_tf;
+    bool m_first_time = true;
 };
 
 #endif
