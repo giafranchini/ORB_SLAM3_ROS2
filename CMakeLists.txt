@@ -117,8 +117,7 @@ ament_target_dependencies(
 install(TARGETS mono rgbd stereo stereo-inertial DESTINATION lib/${PROJECT_NAME})
 
 # Install launch files.
-#install(DIRECTORY launch config vocabulary
-#  DESTINATION share/${PROJECT_NAME}/)
+install(DIRECTORY include launch config vocabulary
+  DESTINATION share/${PROJECT_NAME}/)
 
 ament_package()
-
