@@ -8,20 +8,25 @@ using std::placeholders::_1;
 MonocularSlamNode::MonocularSlamNode(ORB_SLAM3::System* pSLAM)
 :   Node("orbslam3_monocular")
 {
-    m_SLAM = pSLAM;
-    m_prev_odom.setIdentity();
+    publish_tf = this->declare_parameter<bool>("publish_tf", false);
+    localization_mode = this->declare_parameter<bool>("localization_mode", true);
+    
+    SLAM = pSLAM;
+    if (localization_mode) {
+        SLAM->ActivateLocalizationMode();
+    }
+    
+    prev_odom.setIdentity();
+    
+    tf_buffer = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+    tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
+    tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
-    m_publish_tf = this->declare_parameter<bool>("publish_tf", false);
-
-    m_tf_buffer = std::make_unique<tf2_ros::Buffer>(this->get_clock());
-    m_tf_listener = std::make_shared<tf2_ros::TransformListener>(*m_tf_buffer);
-    m_tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
-
-    m_image_subscriber = this->create_subscription<ImageMsg>(
+    image_subscriber = this->create_subscription<ImageMsg>(
         "camera",
         10,
         std::bind(&MonocularSlamNode::GrabImage, this, std::placeholders::_1));
-    m_odom_publisher = this->create_publisher<nav_msgs::msg::Odometry>("orb_slam3/odom", 10);
+    odom_publisher = this->create_publisher<nav_msgs::msg::Odometry>("orb_slam3/odom", 10);
 
     RCLCPP_INFO(this->get_logger(), "Monocular node constructed");
 }
@@ -29,20 +34,20 @@ MonocularSlamNode::MonocularSlamNode(ORB_SLAM3::System* pSLAM)
 MonocularSlamNode::~MonocularSlamNode()
 {
     // Stop all threads
-    m_SLAM->Shutdown();
+    SLAM->Shutdown();
 
     // Save camera trajectory
-    m_SLAM->SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
+    SLAM->SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
 }
 
 void MonocularSlamNode::GrabImage(const ImageMsg::SharedPtr msg)
 {
-    if (m_first_time) {
+    if (first_time) {
         try {
-            auto t_cam = m_tf_buffer->lookupTransform(
+            auto t_cam = tf_buffer->lookupTransform(
                 "base_link", msg->header.frame_id, tf2_ros::fromMsg(msg->header.stamp));
-            m_cam_to_bl = tf2::transformToEigen(t_cam).cast<float>();
-            m_first_time = false;
+            cam_to_bl = tf2::transformToEigen(t_cam).cast<float>();
+            first_time = false;
         } catch (const tf2::TransformException & ex) {
             RCLCPP_INFO(
                 this->get_logger(), "Could not transform %s to base_link: %s",
@@ -54,7 +59,7 @@ void MonocularSlamNode::GrabImage(const ImageMsg::SharedPtr msg)
     // Copy the ros image message to cv::Mat.
     try
     {
-        m_cvImPtr = cv_bridge::toCvCopy(msg);
+        cvImPtr = cv_bridge::toCvCopy(msg);
     }
     catch (cv_bridge::Exception& e)
     {
@@ -62,12 +67,12 @@ void MonocularSlamNode::GrabImage(const ImageMsg::SharedPtr msg)
         return;
     }
 
-    std::cout<<"one frame has been sent"<<std::endl;
-    Sophus::SE3f sophus_tf = m_SLAM->TrackMonocular(m_cvImPtr->image, Utility::StampToSec(msg->header.stamp));
+    // std::cout<<"one frame has been sent"<<std::endl;
+    Sophus::SE3f sophus_tf = SLAM->TrackMonocular(cvImPtr->image, Utility::StampToSec(msg->header.stamp));
     Eigen::Isometry3f tf;
     tf = sophus_tf.cast<float>().matrix();
     
-    Eigen::Isometry3f curr_odom = m_prev_odom * (m_cam_to_bl * tf * m_cam_to_bl.inverse());
+    Eigen::Isometry3f curr_odom = prev_odom * (cam_to_bl * tf * cam_to_bl.inverse());
     Eigen::Quaternionf q(curr_odom.linear());
 
     // Publish the camera trajectory
@@ -83,7 +88,7 @@ void MonocularSlamNode::GrabImage(const ImageMsg::SharedPtr msg)
     odom.pose.pose.orientation.z = q.z();
     odom.pose.pose.orientation.w = q.w();
 
-    if (m_publish_tf) {
+    if (publish_tf) {
         geometry_msgs::msg::TransformStamped odom_tf;
         odom_tf.header.stamp = msg->header.stamp;
         odom_tf.header.frame_id = "odom";
@@ -96,8 +101,8 @@ void MonocularSlamNode::GrabImage(const ImageMsg::SharedPtr msg)
         odom_tf.transform.rotation.z = odom.pose.pose.orientation.z;
         odom_tf.transform.rotation.w = odom.pose.pose.orientation.w;
     
-        m_tf_broadcaster->sendTransform(odom_tf);
+        tf_broadcaster->sendTransform(odom_tf);
     }
 
-    m_odom_publisher->publish(odom);
+    odom_publisher->publish(odom);
 }

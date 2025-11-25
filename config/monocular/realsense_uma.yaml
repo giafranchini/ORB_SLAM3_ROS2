@@ -22,7 +22,7 @@ Camera.width: 640
 Camera.height: 480
 
 # Camera frames per second 
-Camera.fps: 13.0
+Camera.fps: 10.0
 
 # Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
 Camera.RGB: 1
@@ -30,16 +30,11 @@ Camera.RGB: 1
 # Image scale, it changes the image size to be processed (<1.0: reduce, >1.0: increase)
 Camera.imageScale: 1.0 # 0.5 #0.7071 # 1/sqrt(2)
 
-# Close/Far threshold. Baseline times.
-ThDepth: 40.0
-# stereo baseline times fx
-Camera.bf: 19.114771561
-
 #--------------------------------------------------------------------------------------------
 # ORB Parameters
 #--------------------------------------------------------------------------------------------
 # ORB Extractor: Number of features per image
-ORBextractor.nFeatures: 1250
+ORBextractor.nFeatures: 1000
 
 # ORB Extractor: Scale factor between levels in the scale pyramid 	
 ORBextractor.scaleFactor: 1.2
@@ -51,8 +46,8 @@ ORBextractor.nLevels: 8
 # Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
 # Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
 # You can lower these values if your images have low contrast			
-ORBextractor.iniThFAST: 20
-ORBextractor.minThFAST: 7
+ORBextractor.iniThFAST: 10
+ORBextractor.minThFAST: 0
 
 #--------------------------------------------------------------------------------------------
 # Viewer Parameters

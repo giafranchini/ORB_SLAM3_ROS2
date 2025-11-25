@@ -1,0 +1,33 @@
+from launch import LaunchDescription
+from launch.actions import IncludeLaunchDescription, ExecuteProcess, DeclareLaunchArgument
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_ros.actions import ComposableNodeContainer, Node
+from launch_ros.descriptions import ComposableNode
+from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration, PythonExpression
+from ament_index_python.packages import get_package_share_directory
+import os
+import yaml
+
+def generate_launch_description():
+
+    log_level = 'INFO' # 'INFO', 'DEBUG', 'WARN', 'ERROR', 'FATAL'
+    log_level_args = ['--ros-args', '--log-level', log_level, '--log-level', 'rcl:=INFO', '--log-level', 'rclcpp:=INFO', '--log-level', 'rmw_fastrtps_cpp:=INFO']
+
+    config = os.path.join(get_package_share_directory('orbslam3'), 'config/rgb-d-inertial', 'realsense_uma.yaml')
+    vocabulary = os.path.join(get_package_share_directory('orbslam3'), 'vocabulary', 'rec_diablo_1.txt')
+
+    rgbd_node = Node(
+        package='orbslam3',
+        executable='rgbd-inertial',
+        name='rgbd_inertial',
+        output='screen',
+        namespace='spaceuma',
+        arguments=[vocabulary, config],
+        remappings=[
+          ('camera/rgb', '/spaceuma/realsense2_camera_node/color/image_raw'),
+          ('camera/depth', '/spaceuma/realsense2_camera_node/depth/image_rect_raw'),
+          ('imu', '/spaceuma/realsense2_camera_node/imu'),
+        ]
+    )
+    return LaunchDescription([rgbd_node])

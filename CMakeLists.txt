@@ -77,6 +77,26 @@ ament_target_dependencies(
   tf2_geometry_msgs
   tf2_ros)
 
+add_executable(rgbd-inertial
+  src/rgbd-inertial/rgbd-inertial.cpp
+  src/rgbd-inertial/rgbd-inertial-slam-node.cpp
+)
+
+ament_target_dependencies(
+  rgbd-inertial
+  rclcpp 
+  sensor_msgs 
+  cv_bridge 
+  message_filters 
+  ORB_SLAM3 
+  Pangolin 
+  OpenCV 
+  nav_msgs
+  tf2
+  tf2_eigen
+  tf2_geometry_msgs
+  tf2_ros)
+
 add_executable(stereo
   src/stereo/stereo.cpp
   src/stereo/stereo-slam-node.cpp
@@ -114,7 +134,7 @@ ament_target_dependencies(
   tf2_geometry_msgs
   tf2_ros)
 
-install(TARGETS mono rgbd stereo stereo-inertial DESTINATION lib/${PROJECT_NAME})
+install(TARGETS mono rgbd rgbd-inertial stereo stereo-inertial DESTINATION lib/${PROJECT_NAME})
 
 # Install launch files.
 install(DIRECTORY include launch config vocabulary
